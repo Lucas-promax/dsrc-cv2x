@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验一：DSRC 与 C-V2X 可视化模拟分析对比</title>
+    <!-- 引入 Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- 引入 MathJax 用于渲染公式 -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --section-padding: 3rem 0;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background-color: #fff;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--accent-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: opacity 0.3s;
+        }
+        
+        .back-link:hover { opacity: 0.8; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* 头部区域 */
+        header {
+            text-align: center;
+            padding: 4rem 0 2rem;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 1rem auto 0;
+        }
+
+        /* 通用板块样式 */
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            border-left: 5px solid var(--accent-color);
+            padding-left: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+            margin-bottom: 2rem;
+        }
+
+        /* 目的与方法 Grid */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* 数学建模 - 重点 */
+        .formula-box {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            text-align: center;
+            font-size: 1.2rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            cursor: pointer;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        
+        .formula-box:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 15px rgba(52, 152, 219, 0.15);
+        }
+
+        .formula-box::after {
+            content: '\f05a'; /* FontAwesome info icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #ddd;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+
+        .formula-box:hover::after {
+            color: var(--accent-color);
+        }
+
+        .formula-desc {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* 场景配置 */
+        .scenario-badge {
+            display: inline-block;
+            padding: 0.25rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .badge-case1 { background: #e8f5e9; color: #2e7d32; }
+        .badge-case2 { background: #ffebee; color: #c62828; }
+
+        /* --- 核心交互区域 --- */
+        .dashboard {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #eee;
+            margin-bottom: 3rem;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f1f3f5;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 1.5rem;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab-btn i { font-size: 1.5rem; margin-bottom: 5px; }
+
+        .tab-btn:hover { background: #e9ecef; color: var(--primary-color); }
+
+        .tab-btn.active {
+            background: #fff;
+            color: var(--accent-color);
+            border-top: 4px solid var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .tab-content.active { display: block; }
+
+        .result-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .chart-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .chart-box {
+            background: #fafafa;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #eee;
+        }
+
+        .chart-box img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            min-height: 200px; 
+            background: #eee;
+            object-fit: contain;
+        }
+
+        .chart-label {
+            margin-top: 10px;
+            font-weight: 700;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        .analysis-text {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            max-height: 500px;
+            overflow-y: auto;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .analysis-text h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        /* 结论与展望板块 */
+        .conclusion-block {
+            padding: 2rem;
+            background-color: #fcfcfc;
+            border: 1px solid #eee;
+        }
+
+        .conclusion-intro {
+            font-size: 1.05rem;
+            color: #444;
+            margin-bottom: 2rem;
+            background: #e8f4fd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 5px solid #2980b9;
+        }
+
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .impact-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-top: 3px solid var(--accent-color);
+            transition: transform 0.2s;
+        }
+
+        .impact-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .impact-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .final-summary {
+            margin-top: 2rem;
+            text-align: center;
+            font-weight: 500;
+            color: #555;
+            padding-top: 1.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 2000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto; 
+            padding: 0;
+            border: 1px solid #888;
+            width: 60%;
+            max-width: 800px;
+            border-radius: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            animation: modalSlideIn 0.3s;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 2rem;
+            font-size: 1rem;
+            color: #444;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-body p {
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .result-layout { grid-template-columns: 1fr; }
+            .tabs { overflow-x: auto; }
+            .tab-btn { min-width: 120px; }
+            .modal-content { width: 90%; margin: 20% auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航 -->
+    <nav class="navbar">
+        <div class="nav-title">智能车联网项目</div>
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> 返回主页
+        </a>
+    </nav>
+
+    <!-- 头部 Banner -->
+    <header>
+        <div class="container">
+            <h1>实验一：DSRC 与 C-V2X 可视化模拟分析</h1>
+            <p>基于 Python 的机制导向轻量级仿真框架，探究不同负载与距离下的通信性能差异。</p>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- 1. 目的与方法 -->
+        <div class="grid-2">
+            <div class="card">
+                <h2 class="section-title">实验目的与动机</h2>
+                <p>前述理论分析指出 DSRC (CSMA/CA) 与 C-V2X (SPS) 在机制上存在本质差异。本实验旨在通过构建抽象仿真框架，<b>可视化地验证</b>以下关键问题：</p>
+                <ul>
+                    <li>不同网络负载下，性能趋势是否与文献一致？</li>
+                    <li>C-V2X 在拥塞场景下是否具备更优的时延稳定性？</li>
+                    <li>距离衰减对两种机制可靠性的影响规律。</li>
+                </ul>
+                <p><small>注：本实验着重于机制层面的抽象建模，而非物理层的高保真复现。</small></p>
+            </div>
+            
+            <div class="card">
+                <h2 class="section-title">方法与研究基础</h2>
+                <p>参考 Jin 等人 (2022) 的研究，我们采用<b>机制导向 (Mechanism-oriented)</b> 的建模方法。</p>
+                <p>不同于复杂的物理仿真平台（如 Veins/SUMO），我们使用 Python 独立实现了 MAC/PHY 层行为模型：</p>
+                <ul>
+                    <li><b>DSRC:</b> 模拟竞争式信道接入、随机退避与冲突。</li>
+                    <li><b>C-V2X:</b> 模拟 Mode 4 感知式半持久调度 (SPS) 及其资源预留特性。</li>
+                </ul>
+                <p>该方法降低了复杂度，同时保证了结果的可解释性与复现性。</p>
+            </div>
+        </div>
+
+        <!-- 2. 数学建模 (添加点击交互) -->
+        <div class="card">
+            <h2 class="section-title">数学建模与性能计算 <small style="font-size: 0.9rem; color: #777; font-weight: 400; margin-left: 10px;">(点击公式查看详解)</small></h2>
+            <p>采用自下而上的分层建模方法：传播损耗 → SINR 估计 → 链路成功率 → 拥塞退化。</p>
+
+            <div class="formula-box" onclick="showModal(1)">
+                $$ PL(d) = PL_0 + 10n \log_{10}(d) + X_\sigma $$
+                <div class="formula-desc">1. 路径损耗模型 (Path Loss)</div>
+            </div>
+
+            <div class="formula-box" onclick="showModal(2)">
+                $$ SINR_{dB} = 10 \log_{10}\left(\frac{P_{rx}}{P_{noise} + P_{interference}}\right) $$
+                <div class="formula-desc">2. 信噪比计算 (SINR)，考虑并发干扰</div>
+            </div>
+
+            <div class="formula-box" onclick="showModal(3)">
+                $$ P_{PHY} = \frac{1}{1 + \exp\left(-\frac{SINR - \theta}{k}\right)} $$
+                <div class="formula-desc">3. 物理层成功概率 (Logistic 软门限拟合)</div>
+            </div>
+
+            <div class="formula-box" onclick="showModal(4)">
+                $$ P_{succ} = P_{PHY} \cdot e^{-\alpha \cdot \rho} $$
+                <div class="formula-desc">4. 拥塞敏感性衰减模型 ($\rho$ 为信道忙碌率)</div>
+            </div>
+
+            <div class="formula-box" onclick="showModal(5)">
+                $$ P_{succ,total} = P_{MAC} \cdot P_{succ} $$
+                <div class="formula-desc">5. 总通信成功率 (综合 MAC 层冲突概率)</div>
+            </div>
+        </div>
+
+        <!-- 3. 场景配置 -->
+        <div class="card">
+            <h2 class="section-title">模拟场景配置</h2>
+            <p>为系统分析性能与网络压力的关系，设计了两类典型对照场景。所有车辆均以 10 Hz 频率广播消息。</p>
+            <div class="grid-2">
+                <div style="background: #f1f8e9; padding: 1.5rem; border-radius: 8px;">
+                    <span class="scenario-badge badge-case1">Case 1: 低密度轻负载</span>
+                    <ul>
+                        <li><b>车辆数：</b> 80 辆</li>
+                        <li><b>仿真时长：</b> 20 s</li>
+                        <li><b>场景特征：</b> 模拟高速公路或郊区稀疏环境。网络非拥塞，用于确立性能基线。</li>
+                    </ul>
+                </div>
+                <div style="background: #ffebee; padding: 1.5rem; border-radius: 8px;">
+                    <span class="scenario-badge badge-case2">Case 2: 中高密度拥塞</span>
+                    <ul>
+                        <li><b>车辆数：</b> 180 辆</li>
+                        <li><b>仿真时长：</b> 25 s</li>
+                        <li><b>场景特征：</b> 模拟城市早晚高峰。信道竞争激烈，隐藏节点干扰累积，用于揭示高压下的机制差异。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 结果展示交互区 -->
+        <h2 class="section-title">实验结果可视化与分析</h2>
+        <div class="dashboard">
+            <!-- 选项卡 -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'busyRatio')">
+                    <i class="fas fa-broadcast-tower"></i> 信道占用率
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'latency')">
+                    <i class="fas fa-stopwatch"></i> 时延分布
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'overall')">
+                    <i class="fas fa-chart-bar"></i> 总体性能
+                </button>
+                <button class="tab-btn" onclick="openTab(event, 'reliability')">
+                    <i class="fas fa-signal"></i> 可靠性 vs 距离
+                </button>
+            </div>
+
+            <!-- Tab 1: 信道占用率 -->
+            <div id="busyRatio" class="tab-content active">
+                <div class="result-layout">
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <img src="figures1/busy_ratio.png" alt="Case 1 Busy Ratio" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures1/busy_ratio.png'">
+                            <div class="chart-label">Case 1: 低密度场景</div>
+                        </div>
+                        <div class="chart-box">
+                            <img src="figures2/busy_ratio.png" alt="Case 2 Busy Ratio" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures2/busy_ratio.png'">
+                            <div class="chart-label">Case 2: 高密度场景</div>
+                        </div>
+                    </div>
+                    <div class="analysis-text">
+                        <h4>分析结论</h4>
+                        <p><b>现象：</b>在 Case 1 中，DSRC 的忙占比略高于 C-V2X（约 0.009 vs 0.005）。在 Case 2 中，差异拉大，DSRC 升至 0.006，而 C-V2X 维持在 0.0038 左右。</p>
+                        <p><b>原因：</b>CSMA/CA 的“先听后说”机制导致了无效的竞争侦听占用。随着车辆增加，DSRC 因频繁退避导致信道使用效率下降。</p>
+                        <p><b>结论：</b>C-V2X 依托 SPS 机制，信道行为更稳定，拥塞敏感性更低，更具扩展性。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: 时延分布 -->
+            <div id="latency" class="tab-content">
+                <div class="result-layout">
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <img src="figures1/latency_cdf.png" alt="Case 1 Latency CDF" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures1/latency_cdf.png'">
+                            <div class="chart-label">Case 1: 低密度 CDF</div>
+                        </div>
+                        <div class="chart-box">
+                            <img src="figures2/latency_cdf.png" alt="Case 2 Latency CDF" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures2/latency_cdf.png'">
+                            <div class="chart-label">Case 2: 高密度 CDF</div>
+                        </div>
+                    </div>
+                    <div class="analysis-text">
+                        <h4>分析结论</h4>
+                        <p><b>现象：</b>Case 1 中，C-V2X 曲线陡峭，95% 数据包在 5ms 内送达。Case 2 中，DSRC 出现严重长尾，部分时延超 40ms，而 C-V2X 90% 仍保持在 6-8ms。</p>
+                        <p><b>原因：</b>DSRC 的随机退避在拥塞下产生级联效应，导致不可预测的等待。C-V2X 资源预留确保了传输的确定性。</p>
+                        <p><b>结论：</b>C-V2X 适合实时性要求高的协同控制业务，DSRC 在高压下时延抖动风险大。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: 总体性能 -->
+            <div id="overall" class="tab-content">
+                <div class="result-layout">
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <img src="figures1/overall_bars.png" alt="Case 1 Overall Stats" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures1/overall_bars.png'">
+                            <div class="chart-label">Case 1: 总体指标</div>
+                        </div>
+                        <div class="chart-box">
+                            <img src="figures2/overall_bars.png" alt="Case 2 Overall Stats" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures2/overall_bars.png'">
+                            <div class="chart-label">Case 2: 总体指标</div>
+                        </div>
+                    </div>
+                    <div class="analysis-text">
+                        <h4>分析结论</h4>
+                        <p><b>数据：</b>Case 2 中，C-V2X 吞吐量（~210 Mbps）显著高于 DSRC（~150 Mbps），且 p95 时延保持在 5ms 左右。</p>
+                        <p><b>机制：</b>竞争式访问导致 DSRC 在吞吐—可靠性—时延之间形成负向耦合。C-V2X 通过资源持久化调度打破了这一瓶颈。</p>
+                        <p><b>结论：</b>C-V2X 在系统容量和资源利用率上具有压倒性优势。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: 可靠性 vs 距离 -->
+            <div id="reliability" class="tab-content">
+                <div class="result-layout">
+                    <div class="chart-container">
+                        <div class="chart-box">
+                            <img src="figures1/pdr_vs_distance.png" alt="Case 1 PDR vs Dist" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures1/pdr_vs_distance.png'">
+                            <div class="chart-label">Case 1: PDR 衰减曲线</div>
+                        </div>
+                        <div class="chart-box">
+                            <img src="figures2/pdr_vs_distance.png" alt="Case 2 PDR vs Dist" onerror="this.src='https://placehold.co/400x300?text=Figure+Not+Found:\nfigures2/pdr_vs_distance.png'">
+                            <div class="chart-label">Case 2: PDR 衰减曲线</div>
+                        </div>
+                    </div>
+                    <div class="analysis-text">
+                        <h4>分析结论</h4>
+                        <p><b>现象：</b>Case 2 中，近距离（0-100m）C-V2X 维持接近 1.0 的 PDR，而 DSRC 仅约 0.90。在 650m 处，DSRC 降至 0.095，几无连接。</p>
+                        <p><b>原因：</b>SPS 的干扰规避机制有效抵抗了衰落影响，延缓了链路崩溃。</p>
+                        <p><b>结论：</b>若考虑 300m 以上的周边协同感知需求，C-V2X 具有更高的应用安全裕度。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 结论板块 (新增) -->
+        <div class="card conclusion-block">
+            <h2 class="section-title">实验总结与研究意义</h2>
+            
+            <div class="conclusion-intro">
+                <p style="margin: 0;">
+                    <b>综上所述，</b>本章从轻载到高载的完整网络压力区间中，对 DSRC 与 C-V2X 的核心性能差异进行了系统性对比分析。实验结果清晰地表明，C-V2X 在端到端时延稳定性、投递可靠性、信道利用效率以及可用通信覆盖范围等关键指标上均优于 DSRC，且性能差异在高密度、强干扰场景下显著扩大。这一趋势验证了本章提出的机制导向建模假设：基于半持久资源调度的 C-V2X Mode 4 相较于基于随机争用机制的 DSRC，更具抗干扰性与网络扩展性。因此，本章实验为前述理论综述与文献观点提供了直观且可重复的验证支撑，进一步说明 C-V2X 在未来高并发协同驾驶与安全关键业务场景中的适用性更强。
+                </p>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; color: #555;">研究的三大积极影响</h3>
+            <div class="impact-grid">
+                <div class="impact-item">
+                    <div class="impact-title"><i class="fas fa-microscope"></i> 低成本机制探索范式</div>
+                    <p>本章提出的轻量化通信行为模拟方法，成功以低复杂度代价揭示了协议机制差异在系统层面的表现，为车联网通信技术的对比研究提供了一种高解释力的实验范式，尤其适用于教学演示与早期机制探索。</p>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-title"><i class="fas fa-eye"></i> 抽象理论具象化</div>
+                    <p>实验通过可视化结果展示了通信机制与系统行为之间的因果关联，使协议设计的抽象理论得以具体化，有助于理解不同通信策略在实际交通环境中的实际影响。</p>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-title"><i class="fas fa-road"></i> 部署与优化参考</div>
+                    <p>本研究能够为后续更高保真仿真及实车测试提供认知基础和设计指导，通过明确性能瓶颈来源及关键影响因素，为未来通信协议优化、资源管理策略改进以及智能网联交通系统部署提供方向性参考。</p>
+                </div>
+            </div>
+
+            <div class="final-summary">
+                本章工作不仅成功验证了现有研究的核心结论，也为进一步推进车联网通信技术发展与工程实现提供了有价值的实验依据与理论支撑。
+            </div>
+        </div>
+
+    </div>
+
+    <footer style="text-align: center; padding: 2rem; color: #999; margin-top: 3rem;">
+        &copy; 2023 智能车联网项目组 | 实验一可视化报告
+    </footer>
+
+    <!-- 公式详情模态框 -->
+    <div id="formulaModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">公式详解</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 内容由 JS 动态注入 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据存储 (隐藏) -->
+    <div id="formulaData" style="display: none;">
+        <div id="data-1">
+            <p>首先，信号到达接收端前会因传播距离和环境遮挡而产生衰减。本文采用对数距离衰减与阴影衰落组合模型：</p>
+            <p style="text-align: center; font-style: italic;">$$ PL(d) = PL_0 + 10n \log_{10}(d) + X_\sigma $$</p>
+            <p>其中，\( PL(d) \) 为距离 \( d \) 时的路径损耗，\( n \) 为路径损耗指数，用以区分 LoS 与 NLoS 场景传播特性，\( X_\sigma \) 为阴影衰落项，服从高斯随机分布。</p>
+            <p>本文采用的对数距离衰减模型是车联网通信场景中最常使用的传播模型之一，其理论基础源自大尺度衰落规律：电磁波在自由空间传播过程中能量随距离呈幂律衰减，并可在对数坐标系中简化为线性关系。因此，上述模型可准确描述信号强度随距离变化的趋势。</p>
+        </div>
+        <div id="data-2">
+            <p>SINR 是评价无线链路可通信性的最核心指标，它体现了接收信号与噪声和干扰之间的强弱对比关系。在智能车通信中，车辆通常密布于道路环境并频繁广播安全消息，因此并发节点产生的<b>同频干扰</b>是主要性能瓶颈。</p>
+            <p style="text-align: center; font-style: italic;">$$ SINR_{dB} = 10 \log_{10}\left(\frac{P_{rx}}{P_{noise} + P_{interference}}\right) $$</p>
+            <p>本文将干扰功率 \( P_{interference} \) 依据实际并发发送节点集合计算，实现了 DSRC 在载波竞争失败后发生隐藏节点干扰、以及 C-V2X SPS 中资源重选导致冲突等行为的统一建模。因此，该指标能够精确区分两种协议在高载荷条件下性能退化的根源差异。</p>
+        </div>
+        <div id="data-3">
+            <p>为体现不同链路解调性能差异，引入软门限模型：</p>
+            <p style="text-align: center; font-style: italic;">$$ P_{PHY} = \frac{1}{1 + \exp\left(-\frac{SINR - \theta}{k}\right)} $$</p>
+            <p>其中，\( \theta \) 为链路门限中心，\( k \) 控制曲线斜率，\( \theta_{DSRC} > \theta_{C-V2X} \)：表示 DSRC 对低质量链路更敏感。</p>
+            <p>无线链路的成功解调概率与 SINR 之间并非线性，而表现为阈值效应：当 SINR 超过一定门限后，错误率将急剧降低并趋于平台化。模型中不同协议对应不同门限参数（如 DSRC 的 \( \theta \) 较高），能够定量体现两种调制编码方式在抗噪性能与链路健壮性方面的差异，进而保证物理层性能比较的物理一致性。</p>
+        </div>
+        <div id="data-4">
+            <p>车辆密度上升会导致信道竞争加剧，从而产生额外的性能退化。为体现该机制，引入指数形式的拥塞衰减因子：</p>
+            <p style="text-align: center; font-style: italic;">$$ P_{succ} = P_{PHY} \cdot e^{-\alpha \cdot \rho} $$</p>
+            <p>其中，\( \rho \) 为信道忙碌率（Busy Ratio），\( \alpha \) 为协议拥塞敏感系数。</p>
+            <p>信道忙碌率 \( \rho \) 是反映网络拥塞状态的核心指标，其对链路性能的影响已在 DSRC 大量实测中被证实，如城市高交通密度场景会因频繁回退而导致 PDR 快速恶化。其退化形式接近指数增长，因此本文采用指数惩罚方式将拥塞影响映射至最终成功率。</p>
+            <p>其中 \( \alpha \) 是基于机制差异确定。DSRC随机竞争，则拥塞放大效应更明显。C-V2X Mode 4是半持久调度，能抵抗部分负载扰动。因此，该项建模可定量揭示协议设计理念对拥塞敏感性的影响。</p>
+        </div>
+        <div id="data-5">
+            <p>综合 MAC 层冲突与物理层性能得到最终通信成功率：</p>
+            <p style="text-align: center; font-style: italic;">$$ P_{succ,total} = P_{MAC} \cdot P_{succ} $$</p>
+            <p>其中，DSRC 的 \( P_{MAC} \) 包括退避引起的冲突与隐藏节点影响。C-V2X 的 \( P_{MAC} \) 主要与 SPS 资源块冲突概率相关。这完整刻画了协议机制对可靠性产生影响的根因差异。</p>
+        </div>
+    </div>
+
+    <script>
+        // Tab 切换逻辑
+        function openTab(evt, tabName) {
+            var i, tabContent, tabBtns;
+            
+            tabContent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].style.display = "none";
+                tabContent[i].classList.remove("active");
+            }
+            
+            tabBtns = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tabBtns.length; i++) {
+                tabBtns[i].className = tabBtns[i].className.replace(" active", "");
+            }
+            
+            document.getElementById(tabName).style.display = "block";
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.className += " active";
+        }
+
+        // 模态框逻辑
+        var modal = document.getElementById("formulaModal");
+        var modalTitle = document.getElementById("modalTitle");
+        var modalBody = document.getElementById("modalBody");
+
+        var titles = {
+            1: "1. 路径损耗模型 (Path Loss)",
+            2: "2. 信噪比计算 (SINR)",
+            3: "3. 物理层成功概率 (Logistic)",
+            4: "4. 拥塞敏感性衰减模型",
+            5: "5. 总成功概率模型"
+        };
+
+        function showModal(id) {
+            modalTitle.innerText = titles[id];
+            var content = document.getElementById("data-" + id).innerHTML;
+            modalBody.innerHTML = content;
+            modal.style.display = "block";
+            // 重新渲染 MathJax
+            if (window.MathJax) {
+                MathJax.typesetPromise([modalBody]);
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

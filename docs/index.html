@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSRC 与 C-V2X 通信特性分析与仿真验证 | Project Page</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --accent-hover: #2980b9;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --text-main: #333;
+            --text-light: #666;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+            --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
+            --border-radius: 12px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+            background-color: var(--white);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+
+        /* --- 导航栏 --- */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #eee;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            transition: color 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .nav-link:hover {
+            color: var(--accent-color);
+        }
+
+        .nav-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        /* --- Hero 区域 --- */
+        .hero {
+            text-align: center;
+            padding: 6rem 1.5rem 4rem;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            max-width: 1000px;
+            margin: 0 auto 1.5rem;
+            line-height: 1.2;
+        }
+
+        .authors {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .author-item {
+            text-align: center;
+        }
+
+        .author-name {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--accent-color);
+        }
+
+        .author-aff {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 2.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 30px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 2px solid transparent;
+        }
+
+        .btn-primary {
+            background: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary-color);
+            border-color: #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* --- 容器 & 通用 --- */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        section {
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .section-line {
+            width: 60px;
+            height: 4px;
+            background: var(--accent-color);
+            margin: 0 auto;
+            border-radius: 2px;
+        }
+
+        /* --- 摘要 --- */
+        .abstract-box {
+            background: var(--white);
+            border: 1px solid #eee;
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-sm);
+            text-align: justify;
+            position: relative;
+        }
+
+        .abstract-box::before {
+            content: 'ABSTRACT';
+            position: absolute;
+            top: -12px;
+            left: 30px;
+            background: var(--accent-color);
+            color: white;
+            padding: 2px 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border-radius: 4px;
+            letter-spacing: 1px;
+        }
+
+        .keywords {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            border-top: 1px solid #f0f0f0;
+            padding-top: 1rem;
+        }
+
+        .keyword-tag {
+            display: inline-block;
+            background: #eef5fa;
+            color: var(--accent-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-size: 0.85rem;
+        }
+
+        /* --- 原理部分 --- */
+        .principles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            margin-bottom: 4rem;
+        }
+
+        .text-col h3 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .img-col img {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.3s;
+        }
+
+        .img-col img:hover {
+            transform: scale(1.02);
+        }
+
+        .bg-light {
+            background-color: var(--light-bg);
+        }
+
+        /* --- 对比表格 --- */
+        .comparison-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 600px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .comparison-table th {
+            background-color: #f8f9fa;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .comparison-table tr:hover {
+            background-color: #f1f8ff;
+        }
+
+        .comparison-table tr td:first-child {
+            font-weight: 600;
+            color: var(--accent-color);
+            width: 20%;
+        }
+
+        /* --- 实验入口 --- */
+        .labs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .lab-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lab-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .lab-header {
+            background: var(--light-bg);
+            padding: 2rem;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        .lab-icon {
+            font-size: 3rem;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .lab-body {
+            padding: 2rem;
+            flex-grow: 1;
+        }
+
+        .lab-body h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .lab-footer {
+            padding: 1.5rem 2rem;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        /* --- 展望 & 结论 --- */
+        .outlook-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .outlook-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            border: 1px solid #eee;
+            transition: 0.3s;
+        }
+
+        .outlook-item:hover {
+            border-color: var(--accent-color);
+            background: #fdfdfd;
+        }
+
+        .outlook-icon {
+            width: 60px;
+            height: 60px;
+            background: #eef5fa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: var(--accent-color);
+            font-size: 1.5rem;
+        }
+
+        .conclusion-box {
+            background: var(--primary-color);
+            color: white;
+            padding: 3rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+
+        .conclusion-box p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background: #f8f9fa;
+            padding: 3rem 0;
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; }
+            .principles-grid { grid-template-columns: 1fr; }
+            .principles-grid.reverse { display: flex; flex-direction: column-reverse; }
+            .nav-links { display: none; } /* 简化手机端导航 */
+            .comparison-table { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <a href="#" class="nav-brand">
+            <i class="fas fa-network-wired"></i> 智能车联网 V2X
+        </a>
+        <div class="nav-links">
+            <a href="#abstract" class="nav-link">摘要</a>
+            <a href="#principles" class="nav-link">技术原理</a>
+            <a href="#comparison" class="nav-link">对比分析</a>
+            <a href="#experiments" class="nav-link">实验验证</a>
+            <a href="#outlook" class="nav-link">展望</a>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="lab1.html" class="nav-btn"><i class="fas fa-flask"></i> Lab 1</a>
+            <a href="lab2.html" class="nav-btn"><i class="fas fa-desktop"></i> Lab 2</a>
+        </div>
+    </nav>
+
+    <!-- Hero 区域 -->
+    <section class="hero">
+        <h1>面向车联网系统的 DSRC 与 C-V2X<br>通信特性分析与仿真框架验证</h1>
+        
+        <div class="authors">
+            <div class="author-item">
+                <div class="author-name">路骐鸣<sup>1*</sup></div>
+                <div class="author-aff">北京邮电大学国际学院</div>
+            </div>
+            <div class="author-item">
+                <div class="author-name">卢阳<sup>1*</sup></div>
+                <div class="author-aff">北京邮电大学国际学院</div>
+            </div>
+            <div class="author-item">
+                <div class="author-name">杨雨桐<sup>1*</sup></div>
+                <div class="author-aff">北京邮电大学国际学院</div>
+            </div>
+        </div>
+
+        <div class="hero-buttons">
+            <a href="lab1.html" class="btn btn-primary">
+                <i class="fas fa-chart-line"></i> 进入实验一：通信模拟
+            </a>
+            <a href="lab2.html" class="btn btn-secondary">
+                <i class="fas fa-project-diagram"></i> 进入实验二：全链路系统
+            </a>
+        </div>
+    </section>
+
+    <!-- 摘要 -->
+    <section id="abstract" class="container">
+        <div class="abstract-box">
+            <p>
+                随着智能网联汽车与自动驾驶技术的快速发展，车联网（V2X）通信逐渐成为支撑交通安全、协同感知与智能决策的关键技术基础。在现有 V2X 通信方案中，基于 IEEE 802.11p 的 DSRC 与基于蜂窝通信体系的 C-V2X 长期并存，并在标准演进与工程应用层面形成技术路线之争。
+            </p>
+            <p>
+                在系统梳理 DSRC 与 C-V2X 技术机制与发展背景的基础上，本文围绕车联网系统的实际运行特性，对两种通信方案进行实验性分析。一方面，本文构建了机制导向的轻量级仿真框架，分别在低密度与高负载两类典型交通场景下对两种协议的通信性能进行数据分析。另一方面，本文搭建了“感知-通信-可视化”全链路实验框架，结合真实 VANET 数据集开展补充可视化分析，用以从实际交通动态中辅助印证仿真结论。
+            </p>
+            <div class="keywords">
+                <b>关键词：</b>
+                <span class="keyword-tag">车联网通信</span>
+                <span class="keyword-tag">DSRC</span>
+                <span class="keyword-tag">C-V2X</span>
+                <span class="keyword-tag">通信机制对比</span>
+                <span class="keyword-tag">性能评估</span>
+                <span class="keyword-tag">仿真框架</span>
+                <span class="keyword-tag">协同感知</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技术原理 -->
+    <section id="principles" class="bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>DSRC 与 C-V2X 原理概述</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <!-- C-V2X 部分 -->
+            <div class="principles-grid">
+                <div class="text-col">
+                    <h3><i class="fas fa-broadcast-tower"></i> C-V2X 技术架构</h3>
+                    <p>
+                        C-V2X（Cellular Vehicle-to-Everything）基于 3GPP 蜂窝通信标准，创新性地设计了 <b>“直连链路（PC5）+ 蜂窝链路（Uu）”</b> 的双链路架构。
+                    </p>
+                    <ul style="color: #555; list-style: none; padding-left: 0;">
+                        <li><i class="fas fa-check" style="color: var(--accent-color); margin-right: 8px;"></i> <b>PC5 接口：</b> 专用于车-车、车-路等本地直接通信，满足低时延安全需求。</li>
+                        <li><i class="fas fa-check" style="color: var(--accent-color); margin-right: 8px;"></i> <b>Uu 接口：</b> 依托运营商网络，实现车-云广域通信。</li>
+                        <li><i class="fas fa-check" style="color: var(--accent-color); margin-right: 8px;"></i> <b>SPS 调度：</b> 采用半持久调度与资源感知机制，显著降低冲突概率。</li>
+                    </ul>
+                </div>
+                <div class="img-col">
+                    <img src="pic1.png" alt="C-V2X 技术架构与 3GPP 标准演进示意图" onerror="this.src='https://placehold.co/600x400?text=Architecture+Diagram+(pic1.png)'">
+                    <div style="text-align: center; font-size: 0.85rem; color: #888; margin-top: 0.5rem;">C-V2X 技术架构与 3GPP 标准演进示意图</div>
+                </div>
+            </div>
+
+            <!-- DSRC 部分 (反向布局) -->
+            <div class="principles-grid reverse" style="margin-bottom: 0;">
+                <div class="img-col">
+                    <img src="pic2.png" alt="CSMA/CA 机制示意图" onerror="this.src='https://placehold.co/600x400?text=CSMA/CA+Diagram+(pic2.png)'">
+                    <div style="text-align: center; font-size: 0.85rem; color: #888; margin-top: 0.5rem;">DSRC 核心 CSMA/CA 机制示意图</div>
+                </div>
+                <div class="text-col">
+                    <h3><i class="fas fa-wifi"></i> DSRC 核心工作机制</h3>
+                    <p>
+                        DSRC 核心构建于 IEEE 802.11p 标准之上，采用 <b>CSMA/CA（载波侦听多路访问/冲突避免）</b> 协议。
+                    </p>
+                    <p>
+                        其逻辑为“先听后发、冲突规避”。设备在发送前检测信道能量，若空闲则发送，若忙则随机退避。虽然结构简单，但在高密度车流下，竞争加剧会导致 <b>退避级联效应</b>，引发不可控的时延抖动。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 对比分析 -->
+    <section id="comparison" class="container">
+        <div class="section-header">
+            <h2>DSRC vs C-V2X 技术对比分析</h2>
+            <div class="section-line"></div>
+            <p style="margin-top: 1rem; color: #666;">基于 Wi-Fi 的传统架构 vs 基于蜂窝的演进架构</p>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 3rem;">
+             <img src="pic3.png" alt="DSRC与C-V2X核心指标对比" style="max-width: 80%; border-radius: 8px; box-shadow: var(--shadow-sm);" onerror="this.src='https://placehold.co/800x300?text=Core+Metrics+Comparison+(pic3.png)'">
+        </div>
+
+        <div class="comparison-container">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">对比维度</th>
+                        <th style="width: 40%;">DSRC (IEEE 802.11p)</th>
+                        <th style="width: 40%;">C-V2X (LTE-V / NR-V)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>资源调度</td>
+                        <td>分布式竞争 (CSMA/CA)，随机性强</td>
+                        <td>集中式/半持久调度 (SPS)，确定性高</td>
+                    </tr>
+                    <tr>
+                        <td>覆盖范围</td>
+                        <td>短程 (300-500m)，非视距能力弱</td>
+                        <td>PC5直连(~1km) + Uu广域覆盖</td>
+                    </tr>
+                    <tr>
+                        <td>高密度性能</td>
+                        <td>易发生拥塞崩溃，可靠性急剧下降</td>
+                        <td>通过资源池复用，维持高可靠性</td>
+                    </tr>
+                    <tr>
+                        <td>同步机制</td>
+                        <td>异步系统，依赖前导码</td>
+                        <td>GNSS/基站同步，时间精度高</td>
+                    </tr>
+                    <tr>
+                        <td>演进能力</td>
+                        <td>技术体系相对封闭，演进缓慢</td>
+                        <td>面向 5G/6G 平滑演进 (Rel-16/17+)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 实验验证 (重点) -->
+    <section id="experiments" class="bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>实验验证与系统构建</h2>
+                <div class="section-line"></div>
+            </div>
+
+            <div class="labs-grid">
+                <!-- 实验一 -->
+                <div class="lab-card">
+                    <div class="lab-header">
+                        <div class="lab-icon"><i class="fas fa-chart-area"></i></div>
+                        <h3>Lab 1: 通信行为仿真</h3>
+                    </div>
+                    <div class="lab-body">
+                        <p><b>机制导向的轻量级通信行为模拟。</b></p>
+                        <p style="font-size: 0.95rem; color: #555;">
+                            通过构建基于 Python 的抽象仿真框架，对比 DSRC 与 C-V2X 在不同负载下的关键性能指标：
+                        </p>
+                        <ul style="font-size: 0.9rem; color: #666; padding-left: 1.2rem;">
+                            <li>信道忙占比 (Channel Busy Ratio)</li>
+                            <li>时延累积分布 (Latency CDF)</li>
+                            <li>距离-可靠性衰减 (PDR vs Distance)</li>
+                        </ul>
+                    </div>
+                    <div class="lab-footer">
+                        <a href="lab1.html" class="btn btn-primary" style="width: 80%; justify-content: center;">
+                            查看仿真结果 <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 实验二 -->
+                <div class="lab-card">
+                    <div class="lab-header">
+                        <div class="lab-icon"><i class="fas fa-cubes"></i></div>
+                        <h3>Lab 2: 全链路系统构建</h3>
+                    </div>
+                    <div class="lab-body">
+                        <p><b>感知-通信-可视化全流程闭环验证。</b></p>
+                        <p style="font-size: 0.95rem; color: #555;">
+                            构建真实交通场景下的 C-V2X 实验系统，验证通信对业务的影响：
+                        </p>
+                        <ul style="font-size: 0.9rem; color: #666; padding-left: 1.2rem;">
+                            <li>基于 YOLOv5 的真实视频目标感知</li>
+                            <li>基于 Socket 的 OBU-RSU 链路模拟</li>
+                            <li>交互式 V2X 状态可视化 Dashboard</li>
+                        </ul>
+                    </div>
+                    <div class="lab-footer">
+                        <a href="lab2.html" class="btn btn-primary" style="width: 80%; justify-content: center;">
+                            查看系统构建 <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 展望与综合分析 -->
+    <section id="outlook" class="container">
+        <div class="section-header">
+            <h2>综合分析与未来展望</h2>
+            <div class="section-line"></div>
+        </div>
+
+        <div style="margin-bottom: 2rem; text-align: justify; color: #444;">
+            <p>
+                综合两项实验结果可推断：具有蜂窝演进能力与广域协同特性的 C-V2X，在工程可行性与功能安全保障上均具有先天优势。通信机制性能差异不仅停留在协议层指标差别，更会沿着协同感知链路传播至系统功能层面。C-V2X 是面向未来网络化智能交通系统的最优通信技术路线。
+            </p>
+        </div>
+
+        <div class="outlook-grid">
+            <div class="outlook-item">
+                <div class="outlook-icon"><i class="fas fa-signal"></i></div>
+                <h4>5G-A & 6G 融合</h4>
+                <p style="font-size: 0.9rem; color: #666;">增强型超可靠低时延通信（eURLLC）与通感一体化。</p>
+            </div>
+            <div class="outlook-item">
+                <div class="outlook-icon"><i class="fas fa-cloud"></i></div>
+                <h4>车路云协同</h4>
+                <p style="font-size: 0.9rem; color: #666;">依托边缘计算（MEC）实现端、网、算一体化调度。</p>
+            </div>
+            <div class="outlook-item">
+                <div class="outlook-icon"><i class="fas fa-brain"></i></div>
+                <h4>AI 赋能</h4>
+                <p style="font-size: 0.9rem; color: #666;">深度强化学习用于动态资源分配，联邦学习增强网络韧性。</p>
+            </div>
+            <div class="outlook-item">
+                <div class="outlook-icon"><i class="fas fa-globe"></i></div>
+                <h4>全球协同</h4>
+                <p style="font-size: 0.9rem; color: #666;">从“选定技术制式”向“构建开放协同生态”转型。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 结语 -->
+    <section class="bg-light" style="padding-bottom: 0;">
+        <div class="container">
+            <div class="conclusion-box">
+                <h2 style="color: white; margin-top: 0;">结语</h2>
+                <p>
+                    本文通过理论调研与实验验证相结合，证明了在面向未来规模化部署的智能交通系统中，C-V2X 具备更优的系统架构可持续性与业务支撑能力。C-V2X 将在未来车联网系统中扮演核心角色，并开启网络化智能交通的全新阶段。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2025 智能车联网项目小组 | 北京邮电大学国际学院</p>
+            <p style="font-size: 0.8rem; color: #aaa; margin-top: 0.5rem;">
+                Design inspired by IconQA Project Page
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实验二：C-V2X 全链路实验系统构建</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Roboto+Mono:wght@400&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --secondary-accent: #2ecc71;
+            --purple-accent: #9b59b6;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: var(--accent-color);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+        
+        .back-link:hover { transform: translateX(-5px); }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* 头部 Banner */
+        header {
+            text-align: center;
+            padding: 5rem 0 3rem;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d); /* 稍微不同的渐变以区分实验一 */
+            background: linear-gradient(135deg, #2980b9, #2c3e50);
+            color: white;
+            margin-bottom: 3rem;
+            border-radius: 0 0 50px 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 1rem auto 0;
+        }
+
+        /* 通用卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.04);
+            margin-bottom: 3rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-3px); }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 30px;
+            background: var(--accent-color);
+            border-radius: 3px;
+        }
+
+        /* 1. 动机与目的 */
+        .motivation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .motivation-text p { text-align: justify; color: #555; }
+        
+        .goal-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .goal-list li {
+            background: #f0f7ff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .goal-list li i { color: var(--accent-color); margin-top: 4px; }
+
+        /* 2. 系统架构图片 */
+        .architecture-img-box {
+            text-align: center;
+            background: #f9f9f9;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px dashed #e0e0e0;
+        }
+        
+        .architecture-img-box img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .img-caption {
+            margin-top: 1rem;
+            color: #777;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        /* 3. 动态模块实现 (核心亮点) */
+        .module-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .module-card {
+            flex: 1;
+            min-width: 280px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .module-card:hover {
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+            border-color: transparent;
+        }
+
+        /* 模块特定颜色 */
+        .mod-perception { --theme: var(--accent-color); }
+        .mod-comm { --theme: var(--secondary-accent); }
+        .mod-vis { --theme: var(--purple-accent); }
+
+        .module-icon {
+            width: 80px;
+            height: 80px;
+            background: #f4f6f8;
+            border-radius: 50%;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--theme);
+            transition: all 0.4s;
+            position: relative;
+        }
+
+        .module-card:hover .module-icon {
+            background: var(--theme);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* 动态波纹效果 */
+        .module-icon::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--theme);
+            opacity: 0;
+            top: 0;
+            left: 0;
+        }
+
+        .module-card:hover .module-icon::after {
+            animation: ripple 1.5s infinite;
+        }
+
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .module-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .module-desc {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: left;
+            line-height: 1.6;
+        }
+
+        /* 连接箭头 */
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            color: #ccc;
+            font-size: 1.5rem;
+            animation: floatRight 1.5s infinite ease-in-out;
+        }
+        
+        @keyframes floatRight {
+            0%, 100% { transform: translateX(0); opacity: 0.5; }
+            50% { transform: translateX(5px); opacity: 1; }
+        }
+
+        /* 4. Dashboard 入口 */
+        .dashboard-intro {
+            background: linear-gradient(to right, #ffffff, #f8f9fa);
+            border-left: 5px solid var(--purple-accent);
+        }
+
+        .dashboard-btn-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .dashboard-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(45deg, #8e44ad, #9b59b6);
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 10px 20px rgba(142, 68, 173, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .dashboard-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(142, 68, 173, 0.4);
+        }
+
+        .dashboard-btn:hover::before {
+            left: 100%;
+        }
+
+        /* 5. 意义与价值 */
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .impact-card {
+            background: #f0f4f8;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-top: 3px solid #2c3e50;
+        }
+        
+        .impact-card h4 {
+            margin-top: 0;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            .motivation-grid, .module-flow, .impact-grid { grid-template-columns: 1fr; }
+            .flow-arrow { transform: rotate(90deg); justify-content: center; margin: 10px 0; }
+            @keyframes floatRight {
+                 0%, 100% { transform: translateY(0) rotate(90deg); }
+                 50% { transform: translateY(5px) rotate(90deg); }
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-title">智能车联网项目 / 实验二</div>
+        <a href="index.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> 返回主页
+        </a>
+    </nav>
+
+    <!-- 头部 -->
+    <header>
+        <div class="container">
+            <h1>基于感知 - 通信 - 可视化的 C-V2X 系统构建</h1>
+            <p>从真实场景感知数据生成到通信传输，再到状态可视化的全过程实验验证。</p>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <!-- 1. 动机与目的 -->
+        <div class="card">
+            <h2 class="section-title">实验动机与目的</h2>
+            <div class="motivation-grid">
+                <div class="motivation-text">
+                    <p>随着车路协同技术的发展，当前 C-V2X 研究存在两个关键痛点：一是缺少全过程实验验证平台，导致理论与实验脱节；二是抽象通信指标难以直接体现交通价值。</p>
+                    <p>现有实验往往依赖纯仿真数据，缺少对真实交通场景中目标感知动态性与链路不确定性的还原。本实验旨在构建一套完整的全链路系统，填补这一空白。</p>
+                </div>
+                <div class="motivation-goals">
+                    <ul class="goal-list">
+                        <li><i class="fas fa-check-circle"></i> 构建“感知→传输→可视化”全流程系统。</li>
+                        <li><i class="fas fa-video"></i> 基于真实 YOLOv5 视频数据还原动态特征。</li>
+                        <li><i class="fas fa-chart-line"></i> 开发交互式 Dashboard 实现实时监控。</li>
+                        <li><i class="fas fa-sync"></i> 验证协议与可视化模块的兼容性。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 系统整体架构 -->
+        <div class="card">
+            <h2 class="section-title">系统整体架构</h2>
+            <p>本实验覆盖“数据生成 - 传输 - 监控”三个核心环节，形成了完整的闭环验证体系。</p>
+            <div class="architecture-img-box">
+                <!-- 请确保 lab2/pic1.png 图片文件存在 -->
+                <img src="lab2/pic1.png" alt="系统整体架构图" onerror="this.src='https://placehold.co/800x400?text=Architecture+Diagram+Placeholder+(lab2/pic1.png)'">
+                <div class="img-caption">图 1: C-V2X 实验系统整体架构设计</div>
+            </div>
+        </div>
+
+        <!-- 3. 动态模块功能实现 -->
+        <div class="card">
+            <h2 class="section-title">核心模块功能实现</h2>
+            <p>系统通过以下三个核心模块的协同工作，将原始视频数据转化为可视化的通信态势。</p>
+            
+            <div class="module-flow">
+                <!-- 模块 1 -->
+                <div class="module-card mod-perception">
+                    <div class="module-icon">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="module-title">1. 交通目标感知</div>
+                    <div class="module-desc">
+                        <ul>
+                            <li><b>核心算法：</b>使用 YOLOv5 对夜间交通视频 (<code>traffic_night.mp4</code>) 进行逐帧处理。</li>
+                            <li><b>数据提取：</b>识别车辆、行人类别，提取 Bounding Box 与置信度。</li>
+                            <li><b>语义转换：</b>将检测结果封装为带时间戳的 JSON 对象，作为通信载荷。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 箭头 -->
+                <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+
+                <!-- 模块 2 -->
+                <div class="module-card mod-comm">
+                    <div class="module-icon">
+                        <i class="fas fa-broadcast-tower"></i>
+                    </div>
+                    <div class="module-title">2. C-V2X 数据传输</div>
+                    <div class="module-desc">
+                        <ul>
+                            <li><b>链路模拟：</b>基于 Python Socket (TCP) 模拟“车载(OBU)-路侧(RSU)”链路。</li>
+                            <li><b>并发支持：</b>RSU 监听端口，支持多 OBU 并发接入与数据解析。</li>
+                            <li><b>传输控制：</b>通过 <code>send_interval</code> 控制频率，模拟真实协同传输。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 箭头 -->
+                <div class="flow-arrow"><i class="fas fa-chevron-right"></i></div>
+
+                <!-- 模块 3 -->
+                <div class="module-card mod-vis">
+                    <div class="module-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <div class="module-title">3. 可视化应用</div>
+                    <div class="module-desc">
+                        <ul>
+                            <li><b>实时监控：</b>左侧显示 YOLO 检测画面，右侧显示通信日志。</li>
+                            <li><b>场景重绘：</b>底部简易交通场景重绘（道路、车辆位置）。</li>
+                            <li><b>数据解析：</b>汇总感知数据，为 Dashboard 提供输入。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. V2X Dashboard 介绍与入口 -->
+        <div class="card dashboard-intro">
+            <h2 class="section-title">V2X 通信状态可视化 Dashboard</h2>
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 300px;">
+                    <p>为增强通信性能分析的直观性，我们设计了基于浏览器的交互式 Dashboard。它加载并解析本地 CSV 格式的 V2X 记录数据（源自真实 VANET 数据集子集，约 2000 条高质量记录）。</p>
+                    <p><b>核心功能：</b></p>
+                    <ul style="color: #555;">
+                        <li><b>多维指标监控：</b>端到端时延 (Latency)、数据包投递率 (PDR)、吞吐量。</li>
+                        <li><b>真实数据驱动：</b>保留了链路波动与丢包现象，还原真实通信不确定性。</li>
+                        <li><b>三级可视化结构：</b>总体态势概览 + 细粒度时间趋势 + 原始事件明细。</li>
+                        <li><b>交互筛选：</b>支持按车辆 ID 和时间轴过滤，快速定位异常。</li>
+                    </ul>
+                </div>
+                <div style="flex: 1; display: flex; align-items: center; justify-content: center; background: #f1eeff; border-radius: 12px; padding: 2rem;">
+                    <div style="text-align: center;">
+                        <i class="fas fa-chart-pie" style="font-size: 4rem; color: var(--purple-accent); margin-bottom: 1rem;"></i>
+                        <div style="font-weight: bold; color: var(--purple-accent);">Data Visualization</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTA 按钮 -->
+            <div class="dashboard-btn-container">
+                <a href="lab2/static.html" class="dashboard-btn">
+                    <i class="fas fa-rocket"></i> 进入可视化 Dashboard 演示
+                </a>
+                <p style="margin-top: 10px; font-size: 0.9rem; color: #888;">点击访问 lab2/static.html 查看动态交互效果</p>
+            </div>
+        </div>
+
+        <!-- 5. 实验意义 -->
+        <div class="card">
+            <h2 class="section-title">实验意义与研究价值</h2>
+            <p style="margin-bottom: 2rem;">本实验并非单纯的性能对比，而是作为一种系统理解工具，揭示了 V2X 通信在真实交通环境中对协同感知的基础性作用。</p>
+            
+            <div class="impact-grid">
+                <div class="impact-card">
+                    <h4><i class="fas fa-graduation-cap"></i> 教学与展示价值</h4>
+                    <p>采用“数据子集 + 交互可视化”模式，提供了一种低门槛、高表达力的研究范式，适合快速理解全链路流程。</p>
+                </div>
+                <div class="impact-card">
+                    <h4><i class="fas fa-map-marked-alt"></i> 增强直观性</h4>
+                    <p>将抽象的通信指标转化为具有空间语义和时间语义的系统行为，使看不见的“信号”变成了看得见的“态势”。</p>
+                </div>
+                <div class="impact-card">
+                    <h4><i class="fas fa-link"></i> 闭环验证基础</h4>
+                    <p>为前文的仿真分析提供了现实场景支撑，完善了“机制差异—系统行为”的逻辑链条，为后续实时闭环系统奠定基础。</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <footer style="text-align: center; padding: 3rem 0; color: #7f8c8d; border-top: 1px solid #eee; margin-top: 3rem;">
+        <p>&copy; 2023 智能车联网项目组 | 实验二系统构建报告</p>
+    </footer>
+
+</body>
+</html>
