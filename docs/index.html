@@ -113,7 +113,7 @@
             display: flex;
             justify-content: center;
             gap: 2rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             flex-wrap: wrap;
         }
 
@@ -132,11 +132,45 @@
             color: var(--text-light);
         }
 
+        /* GitHub Link 样式 */
+        .repo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .repo-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #555;
+            background: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+
+        .repo-link:hover {
+            color: var(--text-main);
+            border-color: #333;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+        }
+
+        .repo-link i {
+            font-size: 1.2rem;
+        }
+
         .hero-buttons {
             display: flex;
             justify-content: center;
             gap: 1.5rem;
-            margin-top: 2.5rem;
+            margin-top: 1rem;
         }
 
         .btn {
@@ -478,6 +512,13 @@
             </div>
         </div>
 
+        <!-- 新增 GitHub 链接 -->
+        <div class="repo-container">
+            <a href="https://github.com/Lucas-promax/dsrc-cv2x" target="_blank" class="repo-link">
+                <i class="fab fa-github"></i> Lucas-promax/dsrc-cv2x
+            </a>
+        </div>
+
         <div class="hero-buttons">
             <a href="lab1.html" class="btn btn-primary">
                 <i class="fas fa-chart-line"></i> 进入实验一：通信模拟
@@ -720,7 +761,7 @@
     <!-- Footer -->
     <footer>
         <div class="container">
-            <p>© 2025 智能车联网项目小组 | 北京邮电大学国际学院</p>
+            <p>© 2025 智能车联网项目组 | 北京邮电大学国际学院</p>
             <p style="font-size: 0.8rem; color: #aaa; margin-top: 0.5rem;">
                 Design inspired by IconQA Project Page
             </p>
